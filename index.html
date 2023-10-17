@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>ANOMALY DETECTION</title>
+        <link rel="stylesheet" href="styles.css" />
+        <script src="script.js"></script>
+    </head>
+
+<div class="wholeBody">    
+    <div class="inTop">
+        <div class="vad">
+            <div class="container">
+                <div class="content">
+                    <div class="content__container">
+                        <p class="content__container__text">
+                                    VIDEO
+                        </p>
+                        <p class="content__container__text2">
+                                    DETECTION
+                        </p>
+                              <ul class="content__container__list">
+                                <li class="content__container__list__item"> FIRE  </li>
+                                <li class="content__container__list__item"> CROWD </li>
+                                <li class="content__container__list__item"> ANOMALY </li>
+                                <li class="content__container__list__item"> OBSTRUCT </li>
+                              </ul>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+        <div class="insideCon1">         
+            <div class="vidCon">  
+                <div id="webcam-container"></div>
+            </div> 
+        </div>   
+        <div class="insideCon2">
+            <div id="btnControl">
+                <input type="checkbox" onclick="init()" id="checkbox">
+                    <label for="checkbox" class="switch">
+                        <div class="powersign"></div>
+                    </label>
+            </div>
+         
+    <div>
+         <button class="btn-class-name" onclick="restartPage()">
+            <span class="back"></span>
+            <span class="front"></span>
+        </button>
+    </div>
+        
+    <div id="label-container"></div>
+            
+        <audio id="alarm-sound" src="alarm.mp" preload="auto"></audio>
+        
+        </div>
+    
+</div>
+    
+    
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+<script type="text/javascript">
+    // More API functions here:
+    // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/image
+
+    // the link to your model provided by Teachable Machine export panel
+    const URL = "https://teachablemachine.withgoogle.com/models/3hd34eT1l/";
+
+    let model, webcam, labelContainer, maxPredictions;
+
+    // Load the image model and setup the webcam
+    async function init() {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+
+        // load the model and metadata
+        // Refer to tmImage.loadFromFiles() in the API to support files from a file picker
+        // or files from your local hard drive
+        // Note: the pose library adds "tmImage" object to your window (window.tmImage)
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+
+        // Convenience function to setup a webcam
+        const flip = true; // whether to flip the webcam
+        webcam = new tmImage.Webcam(1000, 550, flip); // width, height, flip
+        await webcam.setup(); // request access to the webcam
+        await webcam.play();
+        window.requestAnimationFrame(loop);
+        
+        // append elements to the DOM
+        document.getElementById("webcam-container").appendChild(webcam.canvas);
+        labelContainer = document.getElementById("label-container");
+        for (let i = 0; i < maxPredictions; i++) { // and class labels
+            labelContainer.appendChild(document.createElement("div"));
+        }
+    }
+    
+
+    async function loop() {
+        webcam.update(); // update the webcam frame
+        await predict();
+        window.requestAnimationFrame(loop);
+    }
+
+    // run the webcam image through the image model
+    async function predict() {
+        // predict can take in an image, video or canvas html element
+        const prediction = await model.predict(webcam.canvas);
+        for (let i = 0; i < maxPredictions; i++) {
+            const classPrediction =
+                prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+            labelContainer.childNodes[i].innerHTML = classPrediction;
+        }
+    }
+    
+    async function predict() {
+    const prediction = await model.predict(webcam.canvas);
+
+    for (let i = 0; i < maxPredictions; i++) {
+        const classPrediction =
+            prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+        labelContainer.childNodes[i].innerHTML = classPrediction;
+
+        // Check if the label is "fire" and the probability is greater than or equal to 0.75
+        if (prediction[i].className === "FIRE" && prediction[i].probability >= .75) {
+            // Play the alarm sound
+            const alarmSound = document.getElementById("alarm-sound");
+            alarmSound.play();
+        }
+    }
+}
+    
+ function restartPage() {
+    location.reload(); // Reloads the current page
+}
+    
+</script>
+</html>
